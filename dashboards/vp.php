@@ -1,0 +1,391 @@
+<?php
+require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../includes/auth.php';
+require_login('vp');
+
+$user = current_user();
+
+// ============ STATS ============
+$stmt = $pdo->query("SELECT COUNT(*) FROM proposals WHERE status = 'vp_review'");
+$pendingCount = (int)$stmt->fetchColumn();
+
+// Pending budget at VP stage
+$stmt = $pdo->query("
+    SELECT COALESCE(SUM(total_budget), 0)
+    FROM proposals
+    WHERE status = 'vp_review'
+");
+$pendingBudget = (float)$stmt->fetchColumn();
+
+// My total approvals
+$stmt = $pdo->prepare("
+    SELECT COUNT(*) FROM approvals
+    WHERE approver_id = ? AND stage = 'vp' AND decision = 'approve'
+");
+$stmt->execute([$user['id']]);
+$approvedCount = (int)$stmt->fetchColumn();
+
+// Total approved budget (all time)
+$stmt = $pdo->query("
+    SELECT COALESCE(SUM(total_budget), 0)
+    FROM proposals
+    WHERE status IN ('approved','project_created')
+");
+$approvedBudget = (float)$stmt->fetchColumn();
+
+// ============ PIPELINE ============
+$pipeline = [];
+foreach ($pdo->query("SELECT status, COUNT(*) c FROM proposals GROUP BY status") as $r) {
+    $pipeline[$r['status']] = (int)$r['c'];
+}
+
+$totalPipeline = array_sum($pipeline);
+$inProgress    = ($pipeline['submitted'] ?? 0) + ($pipeline['under_review'] ?? 0)
+               + ($pipeline['college_review'] ?? 0) + ($pipeline['director_review'] ?? 0)
+               + ($pipeline['vp_review'] ?? 0);
+$closed        = ($pipeline['approved'] ?? 0) + ($pipeline['rejected'] ?? 0)
+               + ($pipeline['project_created'] ?? 0);
+
+// ============ PENDING MY FINAL APPROVAL ============
+$stmt = $pdo->query("
+    SELECT p.id, p.proposal_code, p.title, p.total_budget, p.timeline_months,
+           p.submitted_at,
+           u.full_name AS researcher_name
+    FROM proposals p
+    JOIN users u ON u.id = p.researcher_id
+    WHERE p.status = 'vp_review'
+    ORDER BY p.submitted_at ASC
+    LIMIT 5
+");
+$pending = $stmt->fetchAll();
+
+// ============ MY RECENT DECISIONS ============
+$stmt = $pdo->prepare("
+    SELECT a.decision, a.comment, a.decided_at,
+           p.id AS proposal_id, p.proposal_code, p.title, p.total_budget
+    FROM approvals a
+    JOIN proposals p ON p.id = a.proposal_id
+    WHERE a.approver_id = ? AND a.stage = 'vp'
+    ORDER BY a.decided_at DESC
+    LIMIT 5
+");
+$stmt->execute([$user['id']]);
+$myDecisions = $stmt->fetchAll();
+
+// ============ RECENTLY APPROVED (institution-wide) ============
+$stmt = $pdo->query("
+    SELECT p.id, p.proposal_code, p.title, p.total_budget, p.approved_at,
+           u.full_name AS researcher_name
+    FROM proposals p
+    JOIN users u ON u.id = p.researcher_id
+    WHERE p.status IN ('approved','project_created')
+    ORDER BY p.approved_at DESC
+    LIMIT 5
+");
+$recentApproved = $stmt->fetchAll();
+
+// ============ NOTIFICATIONS ============
+$stmt = $pdo->prepare("
+    SELECT id, title, message, link, is_read, created_at
+    FROM notifications
+    WHERE user_id = ?
+    ORDER BY created_at DESC
+    LIMIT 5
+");
+$stmt->execute([$user['id']]);
+$notifs = $stmt->fetchAll();
+
+// Helper: days waiting
+function days_waiting($submittedAt) {
+    if (!$submittedAt) return '—';
+    $diff = time() - strtotime($submittedAt);
+    $days = floor($diff / 86400);
+    if ($days < 1)  return 'Today';
+    if ($days == 1) return '1 day';
+    return $days . ' days';
+}
+
+include __DIR__ . '/../includes/header.php';
+?>
+
+<!-- ============ ACTION REQUIRED BANNER ============ -->
+<?php if ($pendingCount > 0): ?>
+  <div class="alert alert-success d-flex align-items-center mb-4">
+    <span class="me-3" style="font-size:1.6rem;">✍️</span>
+    <div class="flex-grow-1">
+      <strong>Final approval required:</strong>
+      You have <strong><?= $pendingCount ?></strong> proposal<?= $pendingCount == 1 ? '' : 's' ?>
+      awaiting your final decision.
+      <span class="text-muted ms-2">
+        Total budget: <strong><?= number_format($pendingBudget, 0) ?> ETB</strong>
+      </span>
+    </div>
+    <a href="<?= BASE_URL ?>/modules/approvals/queue.php" class="btn btn-success btn-sm">
+      Go to Approval Queue →
+    </a>
+  </div>
+<?php endif; ?>
+
+<!-- ============ HEADER ============ -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <h3 class="mb-0">Welcome, <?= e($user['full_name']) ?></h3>
+    <small class="text-muted">
+      Vice President — Research &amp; Community Engagement
+      <?php if (!empty($user['last_login'])): ?>
+        · Last login: <?= e(fmt_date($user['last_login'], 'd M Y H:i')) ?>
+      <?php endif; ?>
+    </small>
+  </div>
+</div>
+
+<!-- ============ STAT CARDS ============ -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <a href="<?= BASE_URL ?>/modules/approvals/queue.php" class="text-decoration-none">
+      <div class="card card-stat p-3 h-100">
+        <small class="text-muted">Pending Final Approval</small>
+        <h3 class="mb-0 <?= $pendingCount ? 'text-success' : '' ?>"><?= $pendingCount ?></h3>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-3">
+    <div class="card card-stat p-3 h-100">
+      <small class="text-muted">Pending Budget (ETB)</small>
+      <h3 class="mb-0 <?= $pendingBudget ? 'text-primary' : '' ?>">
+        <?= number_format($pendingBudget, 0) ?>
+      </h3>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <a href="<?= BASE_URL ?>/modules/proposals/list.php?status=approved" class="text-decoration-none">
+      <div class="card card-stat p-3 h-100">
+        <small class="text-muted">Total Approved</small>
+        <h3 class="mb-0 text-success"><?= $approvedCount ?></h3>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-3">
+    <div class="card card-stat p-3 h-100">
+      <small class="text-muted">Total Awarded (ETB)</small>
+      <h3 class="mb-0"><?= number_format($approvedBudget, 0) ?></h3>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+
+  <!-- ============ PENDING FINAL APPROVAL ============ -->
+  <div class="col-md-8">
+    <div class="card" style="min-height: 280px;">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <strong>Proposals Awaiting Final Approval</strong>
+        <a href="<?= BASE_URL ?>/modules/approvals/queue.php" class="small">View all →</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th style="width:140px">Code</th>
+              <th>Title</th>
+              <th style="width:130px">Researcher</th>
+              <th class="text-end" style="width:110px">Budget (ETB)</th>
+              <th style="width:80px">Months</th>
+              <th style="width:90px"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php if (!$pending): ?>
+              <tr>
+                <td colspan="6" class="text-center text-muted py-5">
+                  <div style="font-size:2rem;">🎉</div>
+                  <div class="mt-2">All caught up! No proposals awaiting final approval.</div>
+                </td>
+              </tr>
+            <?php else: foreach ($pending as $p): ?>
+              <tr>
+                <td><code class="small text-nowrap"><?= e($p['proposal_code']) ?></code></td>
+                <td>
+                  <a href="<?= BASE_URL ?>/modules/proposals/view.php?id=<?= (int)$p['id'] ?>"
+                     class="text-decoration-none fw-semibold"
+                     title="<?= e($p['title']) ?>">
+                    <?= e(shorten($p['title'], 70)) ?>
+                  </a>
+                </td>
+                <td class="small"><?= e($p['researcher_name']) ?></td>
+                <td class="text-end small">
+                  <strong><?= number_format((float)$p['total_budget'], 0) ?></strong>
+                </td>
+                <td class="text-center small"><?= (int)$p['timeline_months'] ?> mo</td>
+                <td class="text-end">
+                  <a href="<?= BASE_URL ?>/modules/proposals/view.php?id=<?= (int)$p['id'] ?>"
+                     class="btn btn-sm btn-success">Review →</a>
+                </td>
+              </tr>
+            <?php endforeach; endif; ?>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ NOTIFICATIONS ============ -->
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <strong>Recent Notifications</strong>
+        <a href="<?= BASE_URL ?>/modules/notifications/list.php" class="small">View all →</a>
+      </div>
+      <?php if (!$notifs): ?>
+        <div class="card-body text-center text-muted small py-4">
+          No notifications yet.
+        </div>
+      <?php else: ?>
+        <ul class="list-group list-group-flush">
+          <?php foreach ($notifs as $n): ?>
+            <?php [$icon] = notif_icon($n['title']); ?>
+            <li class="list-group-item small <?= $n['is_read'] ? '' : 'bg-light' ?>">
+              <div class="d-flex gap-2">
+                <span style="font-size:1.2rem;"><?= $icon ?></span>
+                <div class="flex-grow-1">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <strong><?= e($n['title']) ?></strong>
+                    <?php if (!$n['is_read']): ?>
+                      <span class="badge bg-primary" style="font-size:.6rem;">New</span>
+                    <?php endif; ?>
+                  </div>
+                  <div class="text-muted"><?= e(shorten($n['message'], 70)) ?></div>
+                  <small class="text-muted">
+                    <?= e(date('d M H:i', strtotime($n['created_at']))) ?>
+                  </small>
+                </div>
+              </div>
+            </li>
+          <?php endforeach; ?>
+        </ul>
+      <?php endif; ?>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PIPELINE OVERVIEW ============ -->
+<div class="row g-3 mb-4">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <strong>Proposal Pipeline</strong>
+        <div class="d-flex gap-3 small text-muted">
+          <span>Total: <strong class="text-dark"><?= $totalPipeline ?></strong></span>
+          <span>In Progress: <strong class="text-warning"><?= $inProgress ?></strong></span>
+          <span>Closed: <strong class="text-success"><?= $closed ?></strong></span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="row g-2 text-center">
+          <?php
+            $stages = [
+              'submitted'       => ['Submitted',    'primary'],
+              'under_review'    => ['Under Review', 'info'],
+              'college_review'  => ['College',      'info'],
+              'director_review' => ['Director',     'warning'],
+              'vp_review'       => ['VP',           'warning'],
+              'approved'        => ['Approved',     'success'],
+              'returned'        => ['Returned',     'danger'],
+              'rejected'        => ['Rejected',     'danger'],
+            ];
+            foreach ($stages as $key => $info):
+              $count = $pipeline[$key] ?? 0;
+          ?>
+            <div class="col-md-3 col-6">
+              <div class="border rounded p-2 bg-light">
+                <small class="text-muted d-block"><?= $info[0] ?></small>
+                <h5 class="mb-0 text-<?= $count ? $info[1] : 'muted' ?>">
+                  <?= $count ?>
+                </h5>
+              </div>
+            </div>
+          <?php endforeach; ?>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+
+  <!-- ============ MY RECENT DECISIONS ============ -->
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header"><strong>My Recent Approvals</strong></div>
+      <?php if (!$myDecisions): ?>
+        <div class="card-body text-center text-muted small py-4">
+          No decisions recorded yet.
+        </div>
+      <?php else: ?>
+        <ul class="list-group list-group-flush">
+          <?php foreach ($myDecisions as $d): ?>
+            <?php
+              $icon  = $d['decision'] === 'approve' ? '✅' : ($d['decision'] === 'reject' ? '❌' : '↩');
+              $color = $d['decision'] === 'approve' ? 'success' : ($d['decision'] === 'reject' ? 'danger' : 'warning');
+            ?>
+            <li class="list-group-item small">
+              <div class="d-flex gap-2">
+                <span style="font-size:1.2rem;"><?= $icon ?></span>
+                <div class="flex-grow-1">
+                  <div>
+                    <span class="badge bg-<?= $color ?>"><?= e(ucfirst($d['decision'])) ?></span>
+                    <code class="ms-1"><?= e($d['proposal_code']) ?></code>
+                  </div>
+                  <div class="text-muted"><?= e(shorten($d['title'], 60)) ?></div>
+                  <small class="text-muted">
+                    <?= number_format((float)$d['total_budget'], 0) ?> ETB ·
+                    <?= e(date('d M Y H:i', strtotime($d['decided_at']))) ?>
+                  </small>
+                </div>
+              </div>
+            </li>
+          <?php endforeach; ?>
+        </ul>
+      <?php endif; ?>
+    </div>
+  </div>
+
+  <!-- ============ RECENTLY APPROVED ============ -->
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <strong>Recently Approved Projects</strong>
+        <a href="<?= BASE_URL ?>/modules/proposals/list.php?status=approved" class="small">View all →</a>
+      </div>
+      <?php if (!$recentApproved): ?>
+        <div class="card-body text-center text-muted small py-4">
+          No approved projects yet.
+        </div>
+      <?php else: ?>
+        <ul class="list-group list-group-flush">
+          <?php foreach ($recentApproved as $p): ?>
+            <li class="list-group-item small">
+              <div class="d-flex justify-content-between">
+                <div>
+                  <div>
+                    <span class="badge bg-success">Approved</span>
+                    <code class="ms-1"><?= e($p['proposal_code']) ?></code>
+                  </div>
+                  <div class="text-muted"><?= e(shorten($p['title'], 55)) ?></div>
+                  <small class="text-muted">
+                    <?= e($p['researcher_name']) ?> ·
+                    <strong><?= number_format((float)$p['total_budget'], 0) ?> ETB</strong>
+                  </small>
+                </div>
+                <a href="<?= BASE_URL ?>/modules/proposals/view.php?id=<?= (int)$p['id'] ?>"
+                   class="btn btn-sm btn-outline-primary align-self-start">View</a>
+              </div>
+            </li>
+          <?php endforeach; ?>
+        </ul>
+      <?php endif; ?>
+    </div>
+  </div>
+</div>
+
+<?php include __DIR__ . '/../includes/footer.php'; ?>

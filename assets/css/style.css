@@ -1,0 +1,515 @@
+/* ============================================================
+   LOGIN PAGE
+   ============================================================ */
+
+.login-split {
+    display: flex;
+    min-height: 100vh;
+    background: #ffffff;
+    font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* ---------- Left panel ---------- */
+.login-left {
+    flex: 1 1 55%;
+    background: linear-gradient(135deg, #0a1e3d 0%, #0c2547 60%, #102d54 100%);
+    color: #fff;
+    padding: 3rem 4rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Decorative curved lines */
+.login-left::before,
+.login-left::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    pointer-events: none;
+}
+.login-left::before {
+    width: 900px; height: 900px;
+    right: -300px; bottom: -400px;
+}
+.login-left::after {
+    width: 600px; height: 600px;
+    right: -150px; bottom: -250px;
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+.login-brand {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    position: relative;
+    z-index: 2;
+}
+
+.login-brand-logo {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, #f5b500 0%, #e0a000 100%);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    color: #0a1e3d;
+    font-size: 1.1rem;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 12px rgba(245, 181, 0, 0.25);
+}
+
+.login-brand-text h5 {
+    margin: 0;
+    font-weight: 700;
+    font-size: 1.15rem;
+    letter-spacing: 0.3px;
+}
+.login-brand-text small {
+    color: rgba(255, 255, 255, 0.55);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-size: 0.68rem;
+    font-weight: 500;
+}
+
+.login-hero {
+    position: relative;
+    z-index: 2;
+    max-width: 640px;
+}
+
+.login-hero-tag {
+    color: #f5b500;
+    font-weight: 700;
+    letter-spacing: 4px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    margin-bottom: 1.75rem;
+}
+
+.login-hero-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 1.5rem;
+    color: #ffffff;
+}
+
+.login-hero-sub {
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.75);
+    margin-bottom: 2.5rem;
+    max-width: 540px;
+}
+
+.login-features {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.login-features li {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.98rem;
+}
+.login-features .check {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #f5b500;
+    font-weight: 700;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+
+.login-footer {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.5);
+    position: relative;
+    z-index: 2;
+}
+
+/* ---------- Right panel ---------- */
+.login-right {
+    flex: 1 1 45%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 2rem;
+    background: #ffffff;
+}
+
+.login-form-wrap {
+    width: 100%;
+    max-width: 480px;
+}
+
+.login-form-eyebrow {
+    color: #1a4a8a;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    margin-bottom: 1.25rem;
+}
+
+.login-form-title {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: #0a1e3d;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.75rem;
+}
+
+.login-form-sub {
+    color: #64748b;
+    font-size: 0.98rem;
+    margin-bottom: 2.5rem;
+}
+
+.login-form-wrap label {
+    font-weight: 600;
+    color: #0f172a;
+    font-size: 0.92rem;
+    margin-bottom: 0.5rem;
+}
+
+.login-form-wrap .form-control,
+.login-form-wrap .input-group-text {
+    border-color: #e2e8f0;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border-radius: 10px;
+    background: #f8fafc;
+}
+
+.login-form-wrap .form-control:focus {
+    border-color: #1a4a8a;
+    box-shadow: 0 0 0 4px rgba(26, 74, 138, 0.1);
+    background: #ffffff;
+}
+
+.login-input-icon {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    pointer-events: none;
+}
+
+.login-show-btn {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 4px 8px;
+}
+.login-show-btn:hover { color: #1a4a8a; }
+
+.login-forgot {
+    color: #1a4a8a;
+    font-weight: 600;
+    font-size: 0.88rem;
+    text-decoration: none;
+}
+.login-forgot:hover { text-decoration: underline; }
+
+.btn-signin {
+    background: linear-gradient(135deg, #1a4a8a 0%, #0d3766 100%);
+    border: none;
+    color: #fff;
+    font-weight: 600;
+    padding: 0.85rem 1.5rem;
+    border-radius: 10px;
+    font-size: 1rem;
+    width: 100%;
+    transition: all .15s ease;
+    box-shadow: 0 4px 14px rgba(26, 74, 138, 0.3);
+}
+.btn-signin:hover {
+    background: linear-gradient(135deg, #153a6b 0%, #0a2b52 100%);
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(26, 74, 138, 0.35);
+}
+
+.login-divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: #94a3b8;
+    font-size: 0.72rem;
+    letter-spacing: 2px;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin: 2rem 0 1.5rem;
+}
+.login-divider::before,
+.login-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #e2e8f0;
+}
+
+.login-help-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.1rem 1.25rem;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+}
+.login-help-icon {
+    width: 38px;
+    height: 38px;
+    background: #e0ecff;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1a4a8a;
+    font-weight: 700;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+.login-help-box h6 {
+    margin: 0 0 0.25rem;
+    font-weight: 700;
+    color: #0a1e3d;
+    font-size: 0.95rem;
+}
+.login-help-box p {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+.login-trust {
+    text-align: center;
+    margin-top: 1.75rem;
+    color: #94a3b8;
+    font-size: 0.82rem;
+}
+
+.login-remember {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.75rem;
+    font-size: 0.9rem;
+}
+.login-remember .form-check-label {
+    color: #0f172a;
+    font-weight: 500;
+}
+.login-remember .authorized {
+    color: #94a3b8;
+    font-size: 0.82rem;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 991px) {
+    .login-left {
+        display: none;   /* Hide hero on mobile */
+    }
+    .login-right {
+        flex: 1 1 100%;
+        padding: 2rem 1.5rem;
+    }
+    .login-hero-title { font-size: 2.5rem; }
+}
+
+@media (max-width: 576px) {
+    .login-form-title { font-size: 1.75rem; }
+    .login-form-sub { font-size: 0.9rem; margin-bottom: 1.75rem; }
+}
+/* ============================================================
+   APP NAVBAR
+   ============================================================ */
+
+.ddu-app {
+    background: #f5f7fa;
+    font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: #0f172a;
+}
+
+.ddu-navbar {
+    background: linear-gradient(135deg, #0a1e3d 0%, #12315a 100%);
+    box-shadow: 0 2px 10px rgba(10, 30, 61, 0.12);
+    padding: 0.6rem 0;
+    min-height: 64px;
+}
+
+/* ---------- Brand ---------- */
+.ddu-navbar .brand-logo {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #f5b500 0%, #e0a000 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    color: #0a1e3d;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 6px rgba(245, 181, 0, 0.3);
+    flex-shrink: 0;
+}
+
+.ddu-navbar .brand-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+}
+
+.ddu-navbar .brand-text strong {
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+}
+
+.ddu-navbar .brand-text small {
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 500;
+}
+
+/* ---------- Nav links ---------- */
+.ddu-navbar .nav-link {
+    color: rgba(255, 255, 255, 0.85) !important;
+    font-weight: 500;
+    font-size: 0.92rem;
+    padding: 0.5rem 0.85rem !important;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+    position: relative;
+}
+
+.ddu-navbar .nav-link:hover {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.ddu-navbar .nav-link.active {
+    color: #ffffff !important;
+    background: rgba(245, 181, 0, 0.15);
+    font-weight: 600;
+}
+
+.ddu-navbar .nav-link.active::after {
+    content: '';
+    position: absolute;
+    left: 0.85rem;
+    right: 0.85rem;
+    bottom: 0.15rem;
+    height: 2px;
+    background: #f5b500;
+    border-radius: 2px;
+}
+
+.ddu-navbar .nav-icon {
+    font-size: 0.9rem;
+    margin-right: 2px;
+    opacity: 0.9;
+}
+
+/* ---------- Notification badge ---------- */
+.ddu-navbar .badge-notif {
+    position: absolute;
+    top: 2px;
+    right: 0px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+    line-height: 1.2;
+    box-shadow: 0 0 0 2px #0a1e3d;
+}
+
+/* ---------- User avatar ---------- */
+.ddu-navbar .user-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f5b500 0%, #e0a000 100%);
+    color: #0a1e3d;
+    font-weight: 800;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* ---------- Dropdown menus ---------- */
+.ddu-navbar .dropdown-menu {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.4rem;
+    margin-top: 0.5rem;
+}
+
+.ddu-navbar .dropdown-item {
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+}
+
+.ddu-navbar .dropdown-item:hover {
+    background: #f1f5f9;
+}
+
+/* ---------- Mobile ---------- */
+@media (max-width: 991px) {
+    .ddu-navbar .navbar-collapse {
+        background: #0a1e3d;
+        margin: 0.5rem -0.75rem 0;
+        padding: 0.75rem;
+        border-radius: 8px;
+    }
+    .ddu-navbar .nav-link {
+        padding: 0.6rem 0.85rem !important;
+    }
+    .ddu-navbar .nav-link.active::after {
+        display: none;
+    }
+    .ddu-navbar .nav-link.active {
+        background: rgba(245, 181, 0, 0.2);
+    }
+}
