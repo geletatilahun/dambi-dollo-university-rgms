@@ -1,0 +1,28 @@
+
+# Environment configuration
+.env
+.env.local
+.env.production
+
+# Database backups
+*.sql
+*.sql.gz
+
+# Temporary files
+*.log
+*.tmp
+
+# IDE files
+.vscode/
+.idea/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# PHP temporary/cache files
+/cache/
+/tmp/
+
+# Uploaded private documents
+/uploads/
